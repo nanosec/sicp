@@ -23,7 +23,7 @@
          tolerance))
     
     (if good-enough?
-        guess
+        improved-guess
         (sqrt-iter improved-guess)))
   (sqrt-iter 1.0))
 ; Tests: 

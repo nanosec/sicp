@@ -21,7 +21,7 @@
          tolerance))
     
     (if good-enough?
-        guess
+        improved-guess
         (cube-root-iter improved-guess)))
   (cube-root-iter 1.0))
 ; Tests: 
