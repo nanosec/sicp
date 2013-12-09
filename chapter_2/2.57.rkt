@@ -9,9 +9,9 @@
 
 ; A variable is a symbol. 
 
-; A sum is a list: (list '+ a1 a2), where a1 and a2 are exps. 
+; A sum is a list: (list '+ a1 ... an), where a1 ... an are exps. 
 
-; A product is a list: (list '* m1 m2), where m1 and m2 are exps. 
+; A product is a list: (list '* m1 ... mn), where m1 ... mn are exps. 
 
 ; An exponentiation is a list: (list '** base exponent), 
 ; where base and exponent are exps. 
@@ -27,27 +27,12 @@
 (define (same-variable? v1 v2)
   (and (variable? v1) (variable? v2) (eq? v1 v2)))
 
-; make-sum : exp exp [exp] ... [exp] -> # OR sum
-(define (make-sum a1 a2 . as)
-  ; make-sum-2 : exp exp -> # OR sum
-  (define (make-sum-2 a1 a2)
-    (cond ((=number? a1 0) a2)
-          ((=number? a2 0) a1)
-          ((and (number? a1) (number? a2)) (+ a1 a2))
-          (else (list '+ a1 a2))))
-  ; make-sum-3 : exp exp (list-of exp) -> # OR sum
-  (define (make-sum-3 a1 a2 as)
-    (if (null? as)
-        (make-sum-2 a1 a2)
-        (make-sum-2 a1 (make-sum-3 a2 (car as) (cdr as)))))
-  (make-sum-3 a1 a2 as))
-; Examples/Tests: 
-(= (make-sum 1 2) 3)
-(equal? (make-sum 'x 'y) '(+ x y))
-(= (make-sum 1 2 3 4) 10)
-(equal? (make-sum 'x 'y 1 2) '(+ x (+ y 3)))
-(equal? (make-sum 'x 1 2 'y) '(+ x (+ 1 (+ 2 y))))
-(equal? (make-sum 1 2 'x 'y 'z) '(+ 1 (+ 2 (+ x (+ y z)))))
+; make-sum : exp exp -> # OR sum
+(define (make-sum a1 a2)
+  (cond ((=number? a1 0) a2)
+        ((=number? a2 0) a1)
+        ((and (number? a1) (number? a2)) (+ a1 a2))
+        (else (list '+ a1 a2))))
 
 ; sum? : exp -> boolean
 (define (sum? x)
@@ -55,38 +40,25 @@
 
 ; addend : sum -> exp
 (define (addend s) (cadr s))
-; Examples/Tests: 
-(= (addend (make-sum 1 2 'x)) 1)
-(same-variable? (addend (make-sum 'x 2 3)) 'x)
 
 ; augend : sum -> exp
-(define (augend s) (caddr s))
+(define (augend x)
+  (if (null? (cdddr x))
+      (caddr x)
+      (cons '+ (cddr x))))
 ; Examples/Tests: 
-(equal? (augend (make-sum 1 2 'x)) '(+ 2 x))
-(equal? (augend (make-sum 'x 2 3)) 5)
+(= (augend '(+ x 1)) 1)
+(same-variable? (augend '(+ 1 x)) 'x)
+(equal? (augend '(+ x 1 2)) '(+ 1 2))
+(equal? (augend '(+ a b c d)) '(+ b c d))
 
 ; make-product : exp exp -> # OR product
-(define (make-product m1 m2 . ms)
-  ; make-product-2 : exp exp -> # OR product
-  (define (make-product-2 m1 m2)
-    (cond ((or (=number? m1 0) (=number? m2 0)) 0)
-          ((=number? m1 1) m2)
-          ((=number? m2 1) m1)
-          ((and (number? m1) (number? m2)) (* m1 m2))
-          (else (list '* m1 m2))))
-  ; make-product-3 : exp exp (list-of exp) -> # OR product
-  (define (make-product-3 m1 m2 ms)
-    (if (null? ms)
-        (make-product-2 m1 m2)
-        (make-product-2 m1 (make-product-3 m2 (car ms) (cdr ms)))))
-  (make-product-3 m1 m2 ms))
-; Examples/Tests: 
-(= (make-product 2 3) 6)
-(equal? (make-product 'x 'y) '(* x y))
-(= (make-product 2 3 4 5) 120)
-(equal? (make-product 'x 'y 2 3) '(* x (* y 6)))
-(equal? (make-product 'x 2 3 'y) '(* x (* 2 (* 3 y))))
-(equal? (make-product 2 3 'x 'y 'z) '(* 2 (* 3 (* x (* y z)))))
+(define (make-product m1 m2)
+  (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+        ((=number? m1 1) m2)
+        ((=number? m2 1) m1)
+        ((and (number? m1) (number? m2)) (* m1 m2))
+        (else (list '* m1 m2))))
 
 ; product? : exp -> boolean
 (define (product? x)
@@ -94,15 +66,17 @@
 
 ; multiplier : product -> exp
 (define (multiplier p) (cadr p))
-; Examples/Tests: 
-(= (multiplier (make-product 2 'x 3 4)) 2)
-(same-variable? (multiplier (make-product 'x 2 3 4)) 'x)
 
 ; multiplicand : product -> exp
-(define (multiplicand p) (caddr p))
+(define (multiplicand p)
+  (if (null? (cdddr p))
+      (caddr p)
+      (cons '* (cddr p))))
 ; Examples/Tests: 
-(equal? (multiplicand (make-product 2 'x 3 4)) '(* x 12))
-(equal? (multiplicand (make-product 'x 2 3 4)) 24)
+(= (multiplicand '(* x 2)) 2)
+(same-variable? (multiplicand '(* 2 x)) 'x)
+(equal? (multiplicand '(* x 2 3)) '(* 2 3))
+(equal? (multiplicand '(* a b c d)) '(* b c d))
 
 ; make-exponentiation : exp exp -> exponentiation
 (define (make-exponentiation base exponent)
@@ -174,11 +148,11 @@
         (else
          (error "unknown expression type -- DERIV" exp))))
 ; Examples/Tests: 
-(equal-exp? (deriv (make-sum (make-product 5 'x 'y) (make-product 'x 3) 'x) 'x)
-            (make-sum (make-product 5 'y) 4))
-(equal-exp? (deriv (make-sum (make-exponentiation 'x 3) 'x 1) 'x)
-            (make-sum (make-product 3 (make-exponentiation 'x 2)) 1))
-(equal-exp? (deriv (make-product 5 'x 'y) 'y)
-            (make-product 5 'x))
-(equal-exp? (deriv (make-product 'x 'y (make-sum 'x 3)) 'x)
-            (make-sum (make-product 'x 'y) (make-product 'y (make-sum 'x 3))))
+(equal-exp? (deriv '(+ (* 5 x y) (* x 3) x) 'x)
+	    '(+ (* 5 y) 4))
+(equal-exp? (deriv '(+ (** x 3) x 1) 'x)
+	    '(+ (* 3 (** x 2)) 1))
+(equal-exp? (deriv '(* 5 x y) 'y)
+	    '(* 5 x))
+(equal-exp? (deriv '(* x y (+ x 3)) 'x)
+	    '(+ (* x y) (* y (+ x 3))))

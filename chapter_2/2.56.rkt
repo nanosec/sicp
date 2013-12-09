@@ -169,10 +169,9 @@
         (else
          (error "unknown expression type -- DERIV" exp))))
 ; Examples/Tests: 
-(equal-exp? (deriv (make-exponentiation 2 3) 'x) 0)
-(equal-exp? (deriv (make-exponentiation 'x 1) 'x) 1)
-(equal-exp? (deriv (make-exponentiation 'x 3) 'x)
-            (make-product 3 (make-exponentiation 'x 2)))
-(define x+2y (make-sum 'x (make-product 2 'y)))
-(equal-exp? (deriv (make-exponentiation x+2y 3) 'y)
-            (make-product (make-product 3 (make-exponentiation x+2y 2)) 2))
+(equal-exp? (deriv '(** 2 3) 'x) 0)
+(equal-exp? (deriv '(** x 1) 'x) 1)
+(equal-exp? (deriv '(** x 3) 'x)
+	    '(* 3 (** x 2)))
+(equal-exp? (deriv '(** (+ x (* 2 y)) 3) 'y)
+	    '(* (* 3 (** (+ x (* 2 y)) 2)) 2))

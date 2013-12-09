@@ -44,7 +44,7 @@
 (define (sum? x)
   (and (pair? x) (eq? (cadr x) '+)))
 ; Examples/Tests: 
-(sum? (make-sum 'a 'b))
+(sum? '(a + b))
 (not (sum? '(+ a b)))
 (not (sum? 2))
 (not (sum? 'x))
@@ -52,8 +52,8 @@
 ; addend : sum -> exp
 (define (addend s) (car s))
 ; Examples/Tests: 
-(= (addend (make-sum 3 'x)) 3)
-(same-variable? (addend (make-sum 'x 3)) 'x)
+(= (addend '(3 + x)) 3)
+(same-variable? (addend '(x + 3)) 'x)
 
 ; augend : sum -> exp
 (define (augend s) (caddr s))
@@ -78,17 +78,17 @@
 (define (product? x)
   (and (pair? x) (eq? (cadr x) '*)))
 ; Examples/Tests: 
-(product? (make-product 'a 'b))
+(product? '(a * b))
 (not (product? '(* a b)))
 (not (product? 6))
 (not (product? 'x))
-(not (product? (make-sum 'a 'b)))
+(not (product? '(a + b)))
 
 ; multiplier : product -> exp
 (define (multiplier p) (car p))
 ; Examples/Tests: 
-(= (multiplier (make-product 2 'x)) 2)
-(same-variable? (multiplier (make-product 'x 2)) 'x)
+(= (multiplier '(2 * x)) 2)
+(same-variable? (multiplier '(x * 2)) 'x)
 
 ; multiplicand : product -> exp
 (define (multiplicand p) (caddr p))
@@ -101,30 +101,28 @@
         (else (list base '** exponent))))
 ; Examples/Tests:
 (= (make-exponentiation 17 0) 1)
-(= (make-exponentiation (make-sum 'x 2) 0) 1)
+(= (make-exponentiation '(x + 2) 0) 1)
 (= (make-exponentiation 17 1) 17)
 (= (make-exponentiation 2 3) 8)
-(equal? (make-exponentiation (make-sum 'x 2) (make-product 'y 3))
-        (list (make-sum 'x 2) '** (make-product 'y 3)))
+(equal? (make-exponentiation '(x + 2) '(y * 3))
+        (list '(x + 2) '** '(y * 3)))
 
 ; exponentiation? : exp -> boolean
 (define (exponentiation? x)
   (and (pair? x) (eq? (cadr x) '**)))
 ; Examples/Tests: 
-(exponentiation? (make-exponentiation 'x 2))
-(exponentiation? (make-exponentiation (make-sum 'x 1) (make-product 'y 2)))
+(exponentiation? '(x ** 2))
+(exponentiation? '((x + 1) ** (y * 2)))
 (not (exponentiation? 1))
 (not (exponentiation? 'x))
-(not (exponentiation? (make-sum 'x 1)))
-(not (exponentiation? (make-product 'x 1)))
-(not (exponentiation? (make-exponentiation 'x 0)))
-(not (exponentiation? (make-exponentiation 'x 1)))
+(not (exponentiation? '(x + 1)))
+(not (exponentiation? '(x * 2)))
 
 ; base : exponentiation -> exp
 (define (base e) (car e))
 ; Examples/Tests:
-(= (base (make-exponentiation 2 'x)) 2)
-(same-variable? (base (make-exponentiation 'x 2)) 'x)
+(= (base '(2 ** x)) 2)
+(same-variable? (base '(x ** 2)) 'x)
 
 ; exponent : exponentiation -> exp
 (define (exponent e) (caddr e))
@@ -182,10 +180,9 @@
         (else
          (error "unknown expression type -- DERIV" exp))))
 ; Examples/Tests: 
-(equal-exp? (deriv (make-product (make-sum 'x 3) (make-sum 'y 'x)) 'x)
-	    (make-sum (make-sum 'x 3) (make-sum 'y 'x)))
-(equal-exp? (deriv (make-sum (make-product 2 'x) (make-exponentiation 'x 3)) 'x)
-	    (make-sum 2 (make-product 3 (make-exponentiation 'x 2))))
-(define x+2y (make-sum 'x (make-product 2 'y)))
-(equal-exp? (deriv (make-exponentiation x+2y 3) 'y)
-            (make-product (make-product 3 (make-exponentiation x+2y 2)) 2))
+(equal-exp? (deriv '((x + 3) * (y + x)) 'x)
+	    '((x + 3) + (y + x)))
+(equal-exp? (deriv '((2 * x) + (x ** 3)) 'x)
+	    '(2 + (3 * (x ** 2))))
+(equal-exp? (deriv '((x + (2 * y)) ** 3) 'y)
+	    '((3 * ((x + (2 * y)) ** 2)) * 2))
